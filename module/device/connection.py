@@ -1004,6 +1004,13 @@ class Connection(ConnectionAttr):
         return o
 
     @retry
+    def wake(self):
+        """
+        Attempts to wake device by pressing power button
+        """
+        self.adb_shell(['input', 'keyevent', 'KEYCODE_WAKEUP'])
+
+    @retry
     def list_device(self):
         """
         Returns:
