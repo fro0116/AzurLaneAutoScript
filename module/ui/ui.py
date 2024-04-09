@@ -171,6 +171,11 @@ class UI(InfoHandler):
 
         timeout = Timer(10, count=20).start()
         while 1:
+            if not self.device.get_interactive():
+                logger.info('Device not interactive, attempting to wake device')
+                self.device.adb_shell(['input', 'keyevent', 'KEYCODE_POWER'])
+                self.device.sleep(1)
+                continue
             if skip_first_screenshot:
                 skip_first_screenshot = False
                 if not self.device.has_cached_image:
