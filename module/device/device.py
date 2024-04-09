@@ -188,6 +188,7 @@ class Device(Screenshot, Control, AppControl):
         self.stuck_record_check()
 
         try:
+            super().wake()
             super().screenshot()
         except RequestHumanTakeover:
             if not self.ascreencap_available:
