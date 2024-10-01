@@ -20,6 +20,8 @@ config/reloadalas
 test.py
 test/
 
+!config/alas.json
+
 # Created by .ignore support plugin (hsz.mobi)
 
 ### JetBrains template
