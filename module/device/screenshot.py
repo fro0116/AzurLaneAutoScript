@@ -173,7 +173,7 @@ class Screenshot(Adb, WSA, DroidCast, AScreenCap, Scrcpy, NemuIpc, LDOpenGL):
                 interval = limit_in(origin, 0.1, 0.2)
         elif interval == 'combat':
             origin = self.config.Optimization_CombatScreenshotInterval
-            interval = limit_in(origin, 0.3, 1.0)
+            interval = limit_in(origin, 0.3, 6.0)
             if interval != origin:
                 logger.warning(f'Optimization.CombatScreenshotInterval {origin} is revised to {interval}')
                 self.config.Optimization_CombatScreenshotInterval = interval
