@@ -4,6 +4,7 @@ from module.coalition.assets import *
 from module.raid.assets import *
 from module.retire.assets import DOCK_CHECK
 from module.ui.assets import *
+from module.combat.assets import *
 from module.ui_white.assets import *
 
 
@@ -312,3 +313,43 @@ page_rpg_city.link(button=RPG_HOME, destination=page_main)
 
 # Keep page_rpg_stage, so Raid can import
 # page_rpg_stage = page_raid
+
+# Combat
+# page_battle_status_a = Page(BATTLE_STATUS_A)
+# page_battle_status_b = Page(BATTLE_STATUS_B)
+# page_battle_status_c = Page(BATTLE_STATUS_C)
+# page_battle_status_d = Page(BATTLE_STATUS_D)
+page_battle_status_s = Page(BATTLE_STATUS_S)
+page_get_items_1 = Page(GET_ITEMS_1)
+page_get_items_2 = Page(GET_ITEMS_2)
+# page_battle_status_a.link(button=BATTLE_STATUS_A, destination=page_get_items_1)
+# page_battle_status_b.link(button=BATTLE_STATUS_B, destination=page_get_items_1)
+# page_battle_status_c.link(button=BATTLE_STATUS_C, destination=page_get_items_1)
+# page_battle_status_d.link(button=BATTLE_STATUS_D, destination=page_get_items_1)
+page_battle_status_s.link(button=BATTLE_STATUS_S, destination=page_get_items_1)
+# page_battle_status_a.link(button=BATTLE_STATUS_A, destination=page_get_items_2)
+# page_battle_status_b.link(button=BATTLE_STATUS_B, destination=page_get_items_2)
+# page_battle_status_c.link(button=BATTLE_STATUS_C, destination=page_get_items_2)
+# page_battle_status_d.link(button=BATTLE_STATUS_D, destination=page_get_items_2)
+# page_battle_status_s.link(button=BATTLE_STATUS_S, destination=page_get_items_2)
+page_get_ship = Page(GET_SHIP)
+# page_exp_info_a = Page(EXP_INFO_A)
+# page_exp_info_b = Page(EXP_INFO_B)
+# page_exp_info_c = Page(EXP_INFO_C)
+# page_exp_info_d = Page(EXP_INFO_D)
+page_exp_info_s = Page(EXP_INFO_S)
+# page_get_items_1.link(button=GET_ITEMS_1, destination=page_exp_info_a)
+# page_get_items_1.link(button=GET_ITEMS_1, destination=page_exp_info_b)
+# page_get_items_1.link(button=GET_ITEMS_1, destination=page_exp_info_c)
+# page_get_items_1.link(button=GET_ITEMS_1, destination=page_exp_info_d)
+page_get_items_1.link(button=GET_ITEMS_1, destination=page_exp_info_s)
+# page_get_items_2.link(button=GET_ITEMS_2, destination=page_exp_info_a)
+# page_get_items_2.link(button=GET_ITEMS_2, destination=page_exp_info_b)
+# page_get_items_2.link(button=GET_ITEMS_2, destination=page_exp_info_c)
+# page_get_items_2.link(button=GET_ITEMS_2, destination=page_exp_info_d)
+# page_get_items_2.link(button=GET_ITEMS_2, destination=page_exp_info_s)
+# page_exp_info_a.link(button=EXP_INFO_A, destination=page_unknown)
+# page_exp_info_b.link(button=EXP_INFO_B, destination=page_unknown)
+# page_exp_info_c.link(button=EXP_INFO_C, destination=page_unknown)
+# page_exp_info_d.link(button=EXP_INFO_D, destination=page_unknown)
+page_exp_info_s.link(button=EXP_INFO_S, destination=page_unknown)
