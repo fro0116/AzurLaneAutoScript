@@ -4,6 +4,7 @@ from module.coalition.assets import *
 from module.raid.assets import *
 from module.retire.assets import DOCK_CHECK
 from module.ui.assets import *
+from module.combat.assets import *
 from module.ui_white.assets import *
 
 
@@ -318,3 +319,11 @@ page_rpg_city.link(button=RPG_HOME, destination=page_main)
 
 # Keep page_rpg_stage, so Raid can import
 # page_rpg_stage = page_raid
+
+# Combat
+# page_battle_status_s = Page(BATTLE_STATUS_S)
+# page_get_items_1 = Page(GET_ITEMS_1)
+# page_battle_status_s.link(button=BATTLE_STATUS_S, destination=page_get_items_1)
+# page_exp_info_s = Page(EXP_INFO_S)
+# page_get_items_1.link(button=GET_ITEMS_1, destination=page_exp_info_s)
+# page_exp_info_s.link(button=EXP_INFO_S, destination=page_unknown)
