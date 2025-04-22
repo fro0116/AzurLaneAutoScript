@@ -14,5 +14,5 @@ unset __conda_setup
 # <<< conda initialize <<<
 
 conda activate alas
-python gui.py
+python gui.py --run alas --port 20012
 
