@@ -472,8 +472,8 @@ class AzurLaneAutoScript:
                 self.is_first_task = False
                 method = self.config.Optimization_WhenTaskQueueEmpty
                 if method == 'close_game':
-                    logger.info('Close game during wait')
-                    self.device.app_stop()
+                    logger.info('Go home during wait')
+                    self.device.go_home()
                     release_resources()
                     self.device.release_during_wait()
                     if not self.wait_until(task.next_run):
