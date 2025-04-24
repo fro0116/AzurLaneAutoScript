@@ -48,6 +48,10 @@ class AppControl(Adb, WSA, Uiautomator2):
         else:
             self.app_stop_adb()
 
+    def go_home(self):
+        logger.info(f'Go home: {self.package}')
+        self.go_home_adb()
+
     def hierarchy_timer_set(self, interval=None):
         if interval is None:
             interval = 0.1
