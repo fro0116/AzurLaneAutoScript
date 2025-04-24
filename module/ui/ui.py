@@ -47,6 +47,14 @@ class UI(InfoHandler):
     def is_in_main(self, offset=(30, 30), interval=0):
         return self.ui_page_appear(page_main, offset=offset, interval=interval)
 
+    def ui_get_known_page(self, offset=(30, 30)):
+        for page in Page.iter_pages():
+            if page.check_button is None:
+                continue
+            if self.ui_page_appear(page=page, offset=offset):
+                return page
+        return None
+
     def ui_main_appear_then_click(self, page, offset=(30, 30), interval=3):
         """
         Args:

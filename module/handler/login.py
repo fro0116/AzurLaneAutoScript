@@ -47,9 +47,13 @@ class LoginHandler(UI):
             self.device.screenshot()
 
             # End
-            if self.is_in_main():
+            known_page = self.ui_get_known_page()
+            if known_page is not None:
                 if confirm_timer.reached():
-                    logger.info('Login to main confirm')
+                    if known_page.name in ('page_main', 'page_main_white'):
+                        logger.info('Login to main confirm')
+                    else:
+                        logger.info(f'Already in game: {known_page}')
                     break
             else:
                 confirm_timer.reset()
