@@ -6,6 +6,7 @@ from module.freebies.assets import MAIL_ENTER
 from module.raid.assets import *
 from module.retire.assets import DOCK_CHECK
 from module.ui.assets import *
+from module.combat.assets import *
 from module.ui_white.assets import *
 
 
@@ -336,3 +337,11 @@ page_rpg_city.link(button=RPG_HOME, destination=page_main)
 page_hospital = Page(HOSIPITAL_CHECK)
 page_hospital.link(button=GOTO_MAIN_WHITE, destination=page_main)
 page_campaign_menu.link(button=CAMPAIGN_MENU_GOTO_EVENT, destination=page_hospital)
+
+# Combat
+# page_battle_status_s = Page(BATTLE_STATUS_S)
+# page_get_items_1 = Page(GET_ITEMS_1)
+# page_battle_status_s.link(button=BATTLE_STATUS_S, destination=page_get_items_1)
+# page_exp_info_s = Page(EXP_INFO_S)
+# page_get_items_1.link(button=GET_ITEMS_1, destination=page_exp_info_s)
+# page_exp_info_s.link(button=EXP_INFO_S, destination=page_unknown)

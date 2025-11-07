@@ -144,7 +144,7 @@ class GuildLogistics(GuildBase):
             logger.info('Guild mission has finished this week')
             self._guild_logistics_mission_finished = True
             return False
-        elif self.image_color_count(GUILD_MISSION, color=(255, 255, 255), threshold=254, count=50):
+        elif self.image_color_count(GUILD_MISSION, color=(255, 255, 255), threshold=230, count=20):
             # 0/300 in JP is (255, 255, 255)
             logger.info('Guild mission button inactive')
             return False

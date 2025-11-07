@@ -1004,6 +1004,13 @@ class Connection(ConnectionAttr):
         return o
 
     @retry
+    def wake(self):
+        """
+        Attempts to wake device by pressing power button
+        """
+        self.adb_shell(['input', 'keyevent', 'KEYCODE_WAKEUP'])
+
+    @retry
     def list_device(self):
         """
         Returns:
@@ -1046,7 +1053,7 @@ class Connection(ConnectionAttr):
             manager = EmulatorManager()
             manager.brute_force_connect()
 
-        for _ in range(2):
+        for _ in range(RETRY_TRIES):
             logger.info('Here are the available devices, '
                         'copy to Alas.Emulator.Serial to use it or set Alas.Emulator.Serial="auto"')
             devices = self.list_device()
@@ -1064,6 +1071,7 @@ class Connection(ConnectionAttr):
                 logger.info('Here are the devices detected but unavailable')
                 for device in unavailable:
                     logger.info(f'{device.serial} ({device.status})')
+                time.sleep(retry_sleep(_))
 
             # brute_force_connect
             if self.config.Emulator_Serial == 'auto' and available.count == 0:
