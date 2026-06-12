@@ -52,7 +52,7 @@ except ImportError:
 from module.base.decorator import cached_property
 from module.logger import logger
 
-RETRY_TRIES = 64
+RETRY_TRIES = 5
 RETRY_DELAY = 3
 
 # Patch uiautomator2 appdir
