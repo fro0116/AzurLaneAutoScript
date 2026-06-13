@@ -1,5 +1,6 @@
 import argparse
 import json
+import os
 import queue
 import threading
 import time
@@ -38,6 +39,9 @@ from pywebio.output import (
 )
 from pywebio.pin import pin, pin_on_change
 from pywebio.session import download, go_app, info, local, register_thread, run_js, set_env
+from rich.console import Console
+from starlette.responses import JSONResponse
+from starlette.routing import Route
 
 import module.webui.lang as lang
 from module.config.config import AzurLaneConfig, Function
@@ -95,6 +99,125 @@ patch_executor()
 patch_mimetype()
 fix_py37_subprocess_communicate()
 task_handler = TaskHandler()
+
+
+def _renderable_to_text(renderable) -> str:
+    console = Console(no_color=True, width=180)
+    with console.capture() as capture:
+        console.print(renderable)
+    return capture.get().strip()
+
+
+def _is_error_line(line: str) -> bool:
+    lowered = line.lower()
+    return any(
+        needle in lowered
+        for needle in (
+            "traceback",
+            "exception",
+            "critical",
+            "error",
+            "failed",
+            "crashed",
+            "request human takeover",
+        )
+    )
+
+
+def _process_status(config_name: str):
+    manager = ProcessManager.get_manager(config_name)
+    logs = [_renderable_to_text(item) for item in manager.renderables[-160:]]
+    logs = [line for line in logs if line]
+    error_logs = [line for line in logs if _is_error_line(line)][-16:]
+    state = manager.state
+    if state == 1:
+        state_label = "running"
+    elif state == 2:
+        state_label = "stopped"
+    elif state == 3:
+        state_label = "error"
+    elif state == 4:
+        state_label = "update"
+    else:
+        state_label = "unknown"
+    last_log = logs[-1] if logs else None
+    last_error = error_logs[-1] if error_logs else (last_log if state == 3 else None)
+    return {
+        "config": config_name,
+        "alive": manager.alive,
+        "state": state,
+        "stateLabel": state_label,
+        "lastError": last_error,
+        "lastExitReason": last_log if not manager.alive else None,
+        "recentLogs": logs[-120:],
+        "recentErrors": [
+            {
+                "time": datetime.now().isoformat(),
+                "message": line,
+            }
+            for line in error_logs
+        ],
+    }
+
+
+async def _read_control_request(request):
+    config_name = request.query_params.get("config") or "alas"
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    if isinstance(body, dict) and body.get("config"):
+        config_name = str(body["config"])
+    return config_name
+
+
+def _authorize_control_request(request):
+    token = os.environ.get("ALAS_CONTROL_TOKEN")
+    if token and request.headers.get("x-alas-control-token") != token:
+        return JSONResponse({"error": "unauthorized"}, status_code=401)
+    client_host = request.client.host if request.client else ""
+    if client_host not in ("127.0.0.1", "::1", "localhost"):
+        return JSONResponse({"error": "forbidden"}, status_code=403)
+    return None
+
+
+async def control_status(request):
+    denied = _authorize_control_request(request)
+    if denied:
+        return denied
+    config_name = await _read_control_request(request)
+    return JSONResponse(_process_status(config_name))
+
+
+async def control_start(request):
+    denied = _authorize_control_request(request)
+    if denied:
+        return denied
+    config_name = await _read_control_request(request)
+    manager = ProcessManager.get_manager(config_name)
+    manager.start(None, updater.event)
+    return JSONResponse(_process_status(config_name))
+
+
+async def control_stop(request):
+    denied = _authorize_control_request(request)
+    if denied:
+        return denied
+    config_name = await _read_control_request(request)
+    manager = ProcessManager.get_manager(config_name)
+    manager.stop()
+    return JSONResponse(_process_status(config_name))
+
+
+async def control_restart(request):
+    denied = _authorize_control_request(request)
+    if denied:
+        return denied
+    config_name = await _read_control_request(request)
+    manager = ProcessManager.get_manager(config_name)
+    manager.stop()
+    manager.start(None, updater.event)
+    return JSONResponse(_process_status(config_name))
 
 
 class AlasGUI(Frame):
@@ -1545,5 +1668,9 @@ def app():
         ],
         on_shutdown=[clearup],
     )
+    app.routes.insert(0, Route("/api/control/status", control_status, methods=["GET"]))
+    app.routes.insert(0, Route("/api/control/start", control_start, methods=["POST"]))
+    app.routes.insert(0, Route("/api/control/stop", control_stop, methods=["POST"]))
+    app.routes.insert(0, Route("/api/control/restart", control_restart, methods=["POST"]))
 
     return app
