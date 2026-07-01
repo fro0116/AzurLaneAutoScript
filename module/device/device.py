@@ -188,6 +188,7 @@ class Device(Screenshot, Control, AppControl):
         self.stuck_record_check()
 
         try:
+            super().wake()
             super().screenshot()
         except RequestHumanTakeover:
             if not self.ascreencap_available:
@@ -335,5 +336,14 @@ class Device(Screenshot, Control, AppControl):
             logger.critical('Please enable Alas.Error.HandleError or manually login to AzurLane')
             raise RequestHumanTakeover
         super().app_stop()
+        self.stuck_record_clear()
+        self.click_record_clear()
+
+    def go_home(self):
+        if not self.config.Error_HandleError:
+            logger.critical('No app stop/start, because HandleError disabled')
+            logger.critical('Please enable Alas.Error.HandleError or manually login to AzurLane')
+            raise RequestHumanTakeover
+        super().go_home()
         self.stuck_record_clear()
         self.click_record_clear()
