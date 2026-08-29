@@ -177,11 +177,14 @@ class PrivateQuarters(PQInteract, PQShop):
         self.ui_ensure(page_dormmenu)
         self.ui_goto(page_private_quarters, get_ship=False)
         self.handle_info_bar()
+        self.pq_insufficient_funds = False
         self.pq_run(
             buy_roses=self.config.PrivateQuarters_BuyRoses,
             buy_cake=self.config.PrivateQuarters_BuyCake,
             target_interact=self.config.PrivateQuarters_TargetInteract,
             target_ship=self.config.PrivateQuarters_TargetShip
         )
-
-        self.config.task_delay(server_update=True)
+        if self.pq_insufficient_funds:
+            self.config.task_delay(minute=60)
+        else:
+            self.config.task_delay(server_update=True)
