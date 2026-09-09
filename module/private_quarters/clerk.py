@@ -47,11 +47,12 @@ class PQShopClerk(ShopClerk, PQShopUI):
             # End
             if after_confirm_state():
                 break
+            if self.handle_popup_cancel('PQ_SHOP_INSUFFICIENT'):
+                logger.info('Insufficient funds to buy item')
+                return False
 
             if self.appear(PRIVATE_QUARTERS_SHOP_CHECK, interval=3):
                 self.device.click(item)
-                continue
-            if self.appear_then_click(PRIVATE_QUARTERS_SHOP_AMOUNT_MAX, offset=(20, 20), interval=1):
                 continue
             if self.appear_then_click(PRIVATE_QUARTERS_SHOP_CONFIRM_AMOUNT, offset=(20, 20), interval=1):
                 continue
@@ -67,6 +68,8 @@ class PQShopClerk(ShopClerk, PQShopUI):
                 click_timer.reset()
                 continue
 
+        return True
+
     def shop_buy(self):
         """
         Returns:
@@ -80,14 +83,25 @@ class PQShopClerk(ShopClerk, PQShopUI):
             self.shop_currency()
             if self._currency <= 0:
                 logger.warning(f'Current funds: {self._currency}, stopped')
+                self.pq_insufficient_funds = True
                 return False
 
             item = self.shop_get_item_to_buy(items)
             if item is None:
+                if any(
+                    (i.sub_genre == 'roses' and self.config.PrivateQuarters_BuyRoses)
+                    or (i.sub_genre == 'cake' and self.config.PrivateQuarters_BuyCake)
+                    for i in items
+                ):
+                    logger.info('Wanted items remain but cannot afford, stop')
+                    self.pq_insufficient_funds = True
+                    return False
                 logger.info('Shop buy finished')
                 return True
             else:
-                self.shop_buy_execute(item)
+                if not self.shop_buy_execute(item):
+                    self.pq_insufficient_funds = True
+                    return False
 
                 # After purchase, navbars are weirdly
                 # reset to default positions
