@@ -11,7 +11,7 @@ from module.handler.assets import (AUTO_SEARCH_MENU_EXIT, BATTLE_PASS_NEW_SEASON
 from module.handler.info_handler import InfoHandler
 from module.logger import logger
 from module.map.assets import (FLEET_PREPARATION, MAP_PREPARATION,
-                               MAP_PREPARATION_HARD, MAP_PREPARATION_CANCEL, WITHDRAW)
+                               MAP_PREPARATION_CANCEL, WITHDRAW)
 from module.meowfficer.assets import MEOWFFICER_BUY
 from module.ocr.ocr import Ocr
 from module.os_handler.assets import (AUTO_SEARCH_REWARD, EXCHANGE_CHECK, RESET_FLEET_PREPARATION, RESET_TICKET_POPUP)
@@ -46,6 +46,14 @@ class UI(InfoHandler):
 
     def is_in_main(self, offset=(30, 30), interval=0):
         return self.ui_page_appear(page_main, offset=offset, interval=interval)
+
+    def ui_get_known_page(self, offset=(30, 30)):
+        for page in Page.iter_pages():
+            if page.check_button is None:
+                continue
+            if self.ui_page_appear(page=page, offset=offset):
+                return page
+        return None
 
     def ui_main_appear_then_click(self, page, offset=(30, 30), interval=3):
         """
@@ -518,7 +526,6 @@ class UI(InfoHandler):
 
         # Campaign preparation
         if self.appear(MAP_PREPARATION, offset=(30, 30), interval=3) \
-                or self.appear(MAP_PREPARATION_HARD, offset=(30, 30), interval=3) \
                 or self.appear(FLEET_PREPARATION, offset=(20, 50), interval=3) \
                 or self.appear(RAID_FLEET_PREPARATION, offset=(30, 30), interval=3):
             self.device.click(MAP_PREPARATION_CANCEL)
