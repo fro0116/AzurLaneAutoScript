@@ -13,8 +13,9 @@ from module.os.fleet import OSFleet
 from module.os.globe_camera import GlobeCamera
 from module.os.globe_operation import RewardUncollectedError
 from module.os_handler.assets import AUTO_SEARCH_OS_MAP_OPTION_OFF, AUTO_SEARCH_OS_MAP_OPTION_OFF_DISABLED, \
-    AUTO_SEARCH_OS_MAP_OPTION_ON, AUTO_SEARCH_REWARD
+    AUTO_SEARCH_OS_MAP_OPTION_ON, AUTO_SEARCH_REWARD, CLICK_SAFE_AREA
 from module.os_handler.strategic import StrategicSearchHandler
+from module.os_shop.assets import PORT_SUPPLY_CHECK
 from module.ui.assets import GOTO_MAIN
 from module.ui.page import page_os
 
@@ -537,6 +538,12 @@ class OSMap(OSFleet, Map, GlobeCamera, StrategicSearchHandler):
             if self.handle_map_event():
                 # Auto search can not handle siren searching device.
                 continue
+            # Auto search may walk into Akashi, story option opens her shop.
+            # Re-enabled auto search walks into her again, so end it here.
+            if self.appear(PORT_SUPPLY_CHECK, offset=(20, 20)):
+                self.interval_clear(PORT_SUPPLY_CHECK)
+                self.handle_akashi_supply_buy(CLICK_SAFE_AREA)
+                raise CampaignEnd
 
         return finished_combat
 
