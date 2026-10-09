@@ -1,5 +1,6 @@
 import os
 import re
+import shutil
 import threading
 import time
 from datetime import datetime, timedelta
@@ -134,8 +135,9 @@ class AzurLaneAutoScript:
 
     def save_error_log(self):
         """
-        Save last 60 screenshots in ./log/error/<timestamp>
+        Save recent screenshots in ./log/error/<timestamp>
         Save logs to ./log/error/<timestamp>/log.txt
+        Keep only the 50 most recent error reports.
         """
         from module.base.utils import save_image
         from module.handler.sensitive_info import (handle_sensitive_image,
@@ -161,6 +163,27 @@ class AzurLaneAutoScript:
                 lines = handle_sensitive_logs(lines)
             with open(f'{folder}/log.txt', 'w', encoding='utf-8') as f:
                 f.writelines(lines)
+            self._prune_error_logs()
+
+    @staticmethod
+    def _prune_error_logs(error_root='./log/error'):
+        try:
+            with os.scandir(error_root) as entries:
+                reports = [
+                    entry for entry in entries
+                    if re.fullmatch(r'[0-9]+', entry.name)
+                    and entry.is_dir(follow_symlinks=False)
+                ]
+            reports.sort(key=lambda entry: int(entry.name), reverse=True)
+            for report in reports[50:]:
+                try:
+                    shutil.rmtree(report.path)
+                except FileNotFoundError:
+                    pass
+                except OSError as e:
+                    logger.warning(f'Unable to remove old error report {report.path}: {e}')
+        except OSError as e:
+            logger.warning(f'Unable to prune error reports in {error_root}: {e}')
 
     def restart(self):
         from module.handler.login import LoginHandler
