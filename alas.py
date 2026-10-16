@@ -1,5 +1,6 @@
 import os
 import re
+import shutil
 import threading
 import time
 from datetime import datetime, timedelta
@@ -72,7 +73,7 @@ class AzurLaneAutoScript:
             return True
         except GameNotRunningError as e:
             logger.warning(e)
-            self.config.task_call('Restart')
+            self.start()
             return False
         except (GameStuckError, GameTooManyClickError) as e:
             logger.error(e)
@@ -134,8 +135,9 @@ class AzurLaneAutoScript:
 
     def save_error_log(self):
         """
-        Save last 60 screenshots in ./log/error/<timestamp>
+        Save recent screenshots in ./log/error/<timestamp>
         Save logs to ./log/error/<timestamp>/log.txt
+        Keep only the 50 most recent error reports.
         """
         from module.base.utils import save_image
         from module.handler.sensitive_info import (handle_sensitive_image,
@@ -161,6 +163,27 @@ class AzurLaneAutoScript:
                 lines = handle_sensitive_logs(lines)
             with open(f'{folder}/log.txt', 'w', encoding='utf-8') as f:
                 f.writelines(lines)
+            self._prune_error_logs()
+
+    @staticmethod
+    def _prune_error_logs(error_root='./log/error'):
+        try:
+            with os.scandir(error_root) as entries:
+                reports = [
+                    entry for entry in entries
+                    if re.fullmatch(r'[0-9]+', entry.name)
+                    and entry.is_dir(follow_symlinks=False)
+                ]
+            reports.sort(key=lambda entry: int(entry.name), reverse=True)
+            for report in reports[50:]:
+                try:
+                    shutil.rmtree(report.path)
+                except FileNotFoundError:
+                    pass
+                except OSError as e:
+                    logger.warning(f'Unable to remove old error report {report.path}: {e}')
+        except OSError as e:
+            logger.warning(f'Unable to prune error reports in {error_root}: {e}')
 
     def restart(self):
         from module.handler.login import LoginHandler
@@ -508,17 +531,23 @@ class AzurLaneAutoScript:
                 self.is_first_task = False
                 method = self.config.Optimization_WhenTaskQueueEmpty
                 if method == 'close_game':
-                    logger.info('Close game during wait')
-                    self.device.app_stop()
+                    logger.info('Go home during wait')
+                    time.sleep(5)
+                    self.run('goto_main')
+                    self.device.go_home()
                     release_resources()
                     self.device.release_during_wait()
-                    if not self.wait_until(task.next_run):
-                        del_cached_property(self, 'config')
-                        continue
+                    waited = self.wait_until(task.next_run)
                     if task.command != 'Restart':
-                        self.config.task_call('Restart')
+                        logger.info('Resume game after wait')
+                        self.run('start')
+                    if not waited:
                         del_cached_property(self, 'config')
                         continue
+                    # if task.command != 'Restart':
+                    #     self.config.task_call('Restart')
+                    #     del_cached_property(self, 'config')
+                    #     continue
                 elif method == 'goto_main':
                     logger.info('Goto main page during wait')
                     self.run('goto_main')
