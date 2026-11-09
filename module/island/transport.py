@@ -662,9 +662,15 @@ class IslandTransport(IslandExchange):
         Args:
             slot (int): Open this slot's swap list, or the commission list if None.
         """
-        for _ in self.loop(skip_first=skip_first_screenshot, timeout=15):
+        # Opening the list waits on the server, which can take ~20s to fail after the device slept
+        timeout = Timer(30)
+        for _ in self.loop(skip_first=skip_first_screenshot, timeout=timeout):
             if self.appear(ISLAND_TRANSPORT_LIST_CHECK, offset=(20, 20)):
                 return True
+            if self.handle_island_reconnect():
+                # The request was lost, click again after reconnecting
+                timeout.reset()
+                continue
             if self.handle_transport_popup():
                 continue
             if not self.is_in_transport_main():
