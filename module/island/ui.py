@@ -272,7 +272,23 @@ class IslandUI(UI):
             return True
         return False
 
+    def handle_island_reconnect(self):
+        """
+        The game drops its server connection while the device sleeps, e.g. during a long computation.
+        The next request then fails with a NotConnected popup, or the game reconnects behind a white
+        loading screen, which must not be taken as a get items band.
+        """
+        if self.appear(ISLAND_RECONNECT, offset=(20, 20), interval=3):
+            logger.info('Game connection lost, reconnect')
+            self.device.click(ISLAND_RECONNECT)
+            return True
+        if self.appear(ISLAND_RECONNECT_LOADING, offset=(20, 20)):
+            return True
+        return False
+
     def handle_island_additional(self):
+        if self.handle_island_reconnect():
+            return True
         if self.handle_island_get_items():
             return True
         if self.handle_island_level_up():
