@@ -24,6 +24,7 @@ from module.base.utils import (
     random_rectangle_vector_opted,
     rgb2luma,
 )
+from module.exception import ScriptError
 from module.island.assets import *
 from module.island.data import DIC_ISLAND_ITEM
 from module.island.utils import get_order_effective_stock, load_hard_floor_items, normalize_item_keys
@@ -505,6 +506,38 @@ class IslandTransport(IslandExchange):
             return True
         return False
 
+    def transport_ui_ensure(self, timeout=60):
+        """
+        Ensure the transport page is shown, returning to it if it was lost.
+
+        A dropped connection reloads the game into the island, which leaves the transport page.
+        The page must be restored before reading it or switching the view, otherwise the switch
+        clicks blindly on whatever page is shown until GameTooManyClickError.
+
+        Raises:
+            ScriptError: If the transport page is not available.
+        """
+        for _ in self.loop(skip_first=False, timeout=timeout):
+            if self.is_in_transport_main():
+                return
+            if self.handle_transport_popup():
+                continue
+            if self.appear(ISLAND_TRANSPORT_LIST_CHECK, offset=(20, 20)):
+                logger.info('Transport page lost, close the commission list')
+                self.transport_list_close()
+                continue
+            self.ui_ensure(page_island_transport)
+        logger.warning('Transport page is not available')
+        raise ScriptError('Failed to return to the transport page')
+
+    def transport_view_set(self, state):
+        """
+        Args:
+            state (str): 'content' or 'reward'.
+        """
+        self.transport_ui_ensure()
+        TRANSPORT_VIEW.set(state, main=self)
+
     # Reading cards
 
     def read_submissions(self, cards, image=None):
@@ -593,12 +626,15 @@ class IslandTransport(IslandExchange):
         logger.hr('Transport claim rewards', level=2)
         claimed = False
         confirm = Timer(1.5, count=3).start()
-        for _ in self.loop(skip_first=skip_first_screenshot, timeout=30):
+        timeout = Timer(30)
+        for _ in self.loop(skip_first=skip_first_screenshot, timeout=timeout):
             if self.handle_transport_popup():
                 confirm.reset()
                 continue
             if not self.is_in_transport_main():
                 confirm.reset()
+                self.transport_ui_ensure()
+                timeout.reset()
                 continue
             completed = [slot for slot in range(SLOT_COUNT) if self.slot_appear(ISLAND_TRANSPORT_CLAIM, slot)]
             if completed:
@@ -626,7 +662,7 @@ class IslandTransport(IslandExchange):
                 including empty slots and occupied slots with no trips remaining.
         """
         logger.hr('Transport scan primary slots', level=3)
-        TRANSPORT_VIEW.set('content', main=self)
+        self.transport_view_set('content')
         self.device.screenshot()
         counters = self.transport_slot_counters()
         states = self.transport_slot_states(counters)
@@ -643,7 +679,7 @@ class IslandTransport(IslandExchange):
             scanned.submissions, scanned.stock, scanned.unknown = self.read_submissions(cards)
             scanned.unknown |= not scanned.submissions
         if rewards and slots:
-            TRANSPORT_VIEW.set('reward', main=self)
+            self.transport_view_set('reward')
             self.device.screenshot()
             for slot, scanned in slots.items():
                 if scanned.empty:
@@ -651,7 +687,7 @@ class IslandTransport(IslandExchange):
                 cards = [(REWARD_GRID[card, slot].area, primary_badge_area(card, slot), 'primary_reward')
                          for card in range(3)]
                 scanned.rewards = self.read_rewards(cards)
-            TRANSPORT_VIEW.set('content', main=self)
+            self.transport_view_set('content')
         logger.attr('TransportSlots', states)
         return states, slots
 
@@ -1130,7 +1166,7 @@ class IslandTransport(IslandExchange):
             bool: If swap confirmed.
         """
         logger.hr(f'Transport swap P{slot + 1} <- {sub.name}', level=3)
-        TRANSPORT_VIEW.set('content', main=self)
+        self.transport_view_set('content')
         empty = self.slot_empty(slot)
         if not empty and not self.slot_appear(ISLAND_TRANSPORT_SWAP, slot):
             logger.warning(f'No swap button on P{slot + 1}')
@@ -1201,14 +1237,17 @@ class IslandTransport(IslandExchange):
             bool: If the slot started running.
         """
         logger.hr(f'Transport submit P{slot + 1}', level=3)
-        TRANSPORT_VIEW.set('content', main=self)
+        self.transport_view_set('content')
         confirm = Timer(2, count=4).start()
-        for _ in self.loop(skip_first=skip_first_screenshot, timeout=30):
+        timeout = Timer(30)
+        for _ in self.loop(skip_first=skip_first_screenshot, timeout=timeout):
             if self.handle_transport_popup():
                 confirm.reset()
                 continue
             if not self.is_in_transport_main():
                 confirm.reset()
+                self.transport_ui_ensure()
+                timeout.reset()
                 continue
             if self.slot_running(slot):
                 if confirm.reached():
@@ -1227,7 +1266,7 @@ class IslandTransport(IslandExchange):
             datetime: When all running transports finish, so rewards can be collected in one visit.
                 None if none is running or no timer can be read.
         """
-        TRANSPORT_VIEW.set('content', main=self)
+        self.transport_view_set('content')
         self.device.screenshot()
         running = [slot for slot in range(SLOT_COUNT) if self.slot_running(slot)]
         if not running:
@@ -1261,7 +1300,7 @@ class IslandTransport(IslandExchange):
         Returns:
             datetime: Next batch collection, needed refresh or retry, or None for the next server reset.
         """
-        self.ui_ensure(page_island_transport)
+        self.transport_ui_ensure()
         claimed = dry_run or self.transport_claim_rewards()
         submitted = False
         failed = not claimed
