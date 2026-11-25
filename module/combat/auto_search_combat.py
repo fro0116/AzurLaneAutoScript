@@ -10,7 +10,6 @@ from module.map.map_operation import MapOperation
 
 class AutoSearchCombat(MapOperation, Combat, CampaignStatus):
     _auto_search_in_stage_timer = Timer(3, count=6)
-    _auto_search_status_confirm = False
     auto_search_oil_limit_triggered = False
     auto_search_coin_limit_triggered = False
 
@@ -181,7 +180,6 @@ class AutoSearchCombat(MapOperation, Combat, CampaignStatus):
             if self.handle_auto_search_map_option():
                 continue
             if self.handle_combat_low_emotion():
-                self._auto_search_status_confirm = True
                 continue
             if self.handle_story_skip():
                 continue
@@ -299,13 +297,11 @@ class AutoSearchCombat(MapOperation, Combat, CampaignStatus):
         logger.info('Auto Search combat status')
         self.device.stuck_record_clear()
         self.device.click_record_clear()
-        exp_info = False  # This is for the white screen bug in game
 
         for _ in self.loop():
 
             # End
             if self.is_auto_search_running():
-                self._auto_search_status_confirm = False
                 break
             if self.is_in_auto_search_menu() or self._handle_auto_search_menu_missing():
                 raise CampaignEnd
@@ -314,7 +310,6 @@ class AutoSearchCombat(MapOperation, Combat, CampaignStatus):
             if self.handle_get_ship():
                 continue
             if self.handle_auto_search_map_option():
-                self._auto_search_status_confirm = False
                 continue
             # bunch of popup handlers
             if self.handle_popup_confirm('AUTO_SEARCH_COMBAT_STATUS'):
@@ -330,20 +325,17 @@ class AutoSearchCombat(MapOperation, Combat, CampaignStatus):
             if self.handle_mission_popup_ack():
                 continue
 
-            # Handle low emotion combat
-            # Combat status
-            if self._auto_search_status_confirm:
-                if not exp_info and self.handle_get_ship():
-                    continue
-                if self.handle_get_items():
-                    continue
-                if self.handle_battle_status():
-                    continue
-                if self.handle_popup_confirm('combat_status'):
-                    continue
-                if self.handle_exp_info():
-                    exp_info = True
-                    continue
+            # A battle result can sit in front of this loop: the execute loop leaves as soon as
+            # one appears, and a result screen that waits for a tap instead of auto advancing
+            # would hold the task here until GameStuckError. Handle it like the execute loop does.
+            if self.handle_get_items():
+                continue
+            if self.handle_battle_status():
+                continue
+            if self.handle_popup_confirm('combat_status'):
+                continue
+            if self.handle_exp_info():
+                continue
 
     def auto_search_combat(self, emotion_reduce=None, fleet_index=1):
         """
