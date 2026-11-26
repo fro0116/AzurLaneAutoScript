@@ -325,7 +325,7 @@ def test_order_submission_does_not_request_full_check(submitted):
     main.handle_info_bar = lambda: None
     main.click_order = lambda *args, **kwargs: True
     main.appear = lambda *args, **kwargs: False
-    main.scan_current_order_requirements = lambda: {}
+    main.scan_current_order_requirements = lambda: ({}, True)
     main.is_order_satisfied = lambda *args, **kwargs: True
     main.submit_order = lambda **kwargs: submitted
 

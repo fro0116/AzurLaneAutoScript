@@ -81,13 +81,15 @@ HIGHS_OPTIONS_IGNORED = {
 }
 HIGHS_BOOL_OPTIONS = {'presolve', 'log_to_console', 'output_flag'}
 # linprog methods of SciPy 1.4.1 and their extra options, tried in order until one gives
-# a definite answer. Revised simplex comes first because vertex solutions are integral
-# more often. Autoscale retries handle relaxations that are numerically difficult unscaled.
+# a definite answer. All of them return vertex solutions, which are integral more often, but
+# dense simplex with autoscaling solves the island problems more than ten times faster than
+# revised simplex, and the island transport solve blocks the device while it runs.
+# The other methods stay as fallbacks for relaxations that are numerically difficult.
 LP_ATTEMPTS = (
+    ('simplex', {'autoscale': True}),
     ('revised simplex', {}),
     ('revised simplex', {'autoscale': True}),
     ('interior-point', {}),
-    ('simplex', {'autoscale': True}),
 )
 
 

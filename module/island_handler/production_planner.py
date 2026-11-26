@@ -151,7 +151,12 @@ class IslandProductionPlanner(ModuleBase):
                 )
         calculator.solve_production_plan(hard_floor_items=hard_floor_items, **demands)
         calculator.print_solved_production_plan()
-        if export:
+        if export and not calculator.lp_success:
+            # An unsolvable problem has an empty plan, exporting it would wipe the buffers and menus
+            # that the tasks are still working from, e.g. when the profit floor exceeds what the
+            # island can earn.
+            logger.warning('Production plan is unsolvable with the current settings, keep the previous plan in config')
+        elif export:
             inventory_levels_yaml_text = calculator.daily_buffer_items_to_yaml(use_item_name=use_item_name_in_export)
             idle_accumulating_items_yaml_text = calculator.idle_accumulating_items_to_yaml(use_item_name=use_item_name_in_export)
             hard_floor_items_yaml_text = calculator.hard_floor_items_to_yaml(use_item_name=use_item_name_in_export)

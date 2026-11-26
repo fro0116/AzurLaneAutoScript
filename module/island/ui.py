@@ -295,6 +295,17 @@ class IslandUI(UI):
             return True
         return False
 
+    def ui_additional(self, get_ship=True):
+        """
+        Island tasks switch pages with the same UI code as the rest of Alas, so a dropped
+        connection has to be handled here as well. The game reloads behind a loading screen
+        after reconnecting, which page detection would otherwise take for an unsupported page
+        and fail with GamePageUnknownError before any island task loop sees it.
+        """
+        if self.handle_island_reconnect():
+            return True
+        return super().ui_additional(get_ship=get_ship)
+
     def is_button_selected(self, button, color=(57, 189, 255), threshold=30, count=100):
         """
         Detects if the button is surrounded by a blue border,

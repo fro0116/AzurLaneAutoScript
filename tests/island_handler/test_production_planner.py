@@ -1,4 +1,5 @@
 from datetime import datetime
+import contextlib
 
 import pytest
 
@@ -24,6 +25,20 @@ class FakePlannerConfig:
 
     def cross_get(self, key, default=None):
         return self.values.get(key, default)
+
+
+class RecordingPlannerConfig(FakePlannerConfig):
+    """FakePlannerConfig that records the config keys a run writes."""
+
+    def __init__(self, values):
+        super().__init__(values)
+        self.written = []
+
+    def cross_set(self, key, value):
+        self.written.append(key)
+
+    def multi_set(self):
+        return contextlib.nullcontext()
 
 
 class TestIslandProductionPlanner:
@@ -119,3 +134,23 @@ class TestPlannerConfig:
     def test_create_production_problem_needs_saved_technology(self):
         config = self.planner_config(**{'IslandProductionPlanner.Storage.Storage.IslandTechnologyStatus': None})
         assert create_production_problem(config) is None
+
+    def test_unsolvable_plan_keeps_previous_plan_in_config(self, monkeypatch):
+        current_time = self.season_midpoint()
+        monkeypatch.setattr('module.island.utils._get_server_time', lambda time=None: current_time)
+        values = {
+            'IslandGeneral.IslandGeneral.Season': 'season_20260806_cn',
+            'IslandProductionPlanner.IslandProductionPlanner.FieldsEfficiency': 0,
+            'IslandProductionPlanner.IslandProductionPlanner.OrchardEfficiency': 0,
+            'IslandProductionPlanner.IslandProductionPlanner.NurseryEfficiency': 0,
+            # More coins per day than the island can ever earn, as when a profit floor is set too high
+            'IslandProductionPlanner.IslandProductionPlanner.DailyProfitLowerLimit': 10 ** 9,
+        }
+        config = RecordingPlannerConfig(values)
+        planner = object.__new__(IslandProductionPlanner)
+        planner.config = config
+
+        calculator = planner.run(tech_status_yaml={}, hard_floor_items_yaml={}, export=True)
+
+        assert calculator.lp_success is False
+        assert config.written == []

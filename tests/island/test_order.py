@@ -21,7 +21,7 @@ class TestRequirementsJP:
                    for button in getattr(main, kind)]
             for kind in ('regular_orders', 'regular_cooldown_orders', 'urgent_orders', 'season_orders')
         }
-        requirements = main.scan_current_order_requirements()
+        requirements, _ = main.scan_current_order_requirements()
         actual = dict(orders=orders, requirements=requirements, selected_orders=selected_order_names(main))
         regions = [(entry['area'], '{} #{}'.format(kind, index))
                    for kind, entries in orders.items() for index, entry in enumerate(entries)]
@@ -69,7 +69,7 @@ class TestRequirementsJP:
                    for button in getattr(main, kind)]
             for kind in ('regular_orders', 'regular_cooldown_orders', 'urgent_orders', 'season_orders')
         }
-        requirements = main.scan_current_order_requirements()
+        requirements, _ = main.scan_current_order_requirements()
         actual = dict(orders=orders, requirements=requirements, selected_orders=selected_order_names(main))
         regions = [(entry['area'], '{} #{}'.format(kind, index))
                    for kind, entries in orders.items() for index, entry in enumerate(entries)]
@@ -112,7 +112,7 @@ class TestRequirementsJP:
                    for button in getattr(main, kind)]
             for kind in ('regular_orders', 'regular_cooldown_orders', 'urgent_orders', 'season_orders')
         }
-        requirements = main.scan_current_order_requirements()
+        requirements, _ = main.scan_current_order_requirements()
         actual = dict(orders=orders, requirements=requirements, selected_orders=selected_order_names(main))
         regions = [(entry['area'], '{} #{}'.format(kind, index))
                    for kind, entries in orders.items() for index, entry in enumerate(entries)]
@@ -162,7 +162,7 @@ class TestRequirementsCN:
                    for button in getattr(main, kind)]
             for kind in ('regular_orders', 'regular_cooldown_orders', 'urgent_orders', 'season_orders')
         }
-        requirements = main.scan_current_order_requirements()
+        requirements, _ = main.scan_current_order_requirements()
         actual = dict(orders=orders, requirements=requirements, selected_orders=selected_order_names(main))
         regions = [(entry['area'], '{} #{}'.format(kind, index))
                    for kind, entries in orders.items() for index, entry in enumerate(entries)]
@@ -209,7 +209,7 @@ class TestRequirementsCN:
                    for button in getattr(main, kind)]
             for kind in ('regular_orders', 'regular_cooldown_orders', 'urgent_orders', 'season_orders')
         }
-        requirements = main.scan_current_order_requirements()
+        requirements, _ = main.scan_current_order_requirements()
         actual = dict(orders=orders, requirements=requirements, selected_orders=selected_order_names(main))
         regions = [(entry['area'], '{} #{}'.format(kind, index))
                    for kind, entries in orders.items() for index, entry in enumerate(entries)]
@@ -264,7 +264,7 @@ class TestRequirementsEN:
                    for button in getattr(main, kind)]
             for kind in ('regular_orders', 'regular_cooldown_orders', 'urgent_orders', 'season_orders')
         }
-        requirements = main.scan_current_order_requirements()
+        requirements, _ = main.scan_current_order_requirements()
         actual = dict(orders=orders, requirements=requirements, selected_orders=selected_order_names(main))
         regions = [(entry['area'], '{} #{}'.format(kind, index))
                    for kind, entries in orders.items() for index, entry in enumerate(entries)]

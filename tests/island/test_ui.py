@@ -1,7 +1,22 @@
 """Screenshot golden results; awaiting human review of collection/ images."""
 from module.testing.screenshot import image
+from module.ui.ui import UI
 
 from module.island.ui import IslandUI
+
+
+def test_ui_additional_handles_island_reconnect(monkeypatch):
+    calls = []
+    monkeypatch.setattr(UI, 'ui_additional', lambda self, get_ship=True: calls.append(get_ship) or False)
+    main = object.__new__(IslandUI)
+    main.handle_island_reconnect = lambda: True
+
+    assert main.ui_additional() is True
+    assert calls == []
+
+    main.handle_island_reconnect = lambda: False
+    assert main.ui_additional(get_ship=False) is False
+    assert calls == [False]
 
 
 class TestManageJP:

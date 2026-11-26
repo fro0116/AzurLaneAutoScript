@@ -158,16 +158,32 @@ class IslandOrder(IslandUI):
         return corrected_id
 
     def scan_current_order_requirements(self):
+        """
+        Returns:
+            tuple[dict, bool]: {item_id: counter} of the requirements shown for the selected
+                order, and whether the panel could be read completely.
+
+                The game colors a shortfall in the requirement counter, which the OCR then
+                reads as a lone number, normalized to a requirement of 0. An unreadable row
+                would demand nothing and so make any order look satisfiable, which submits
+                orders the game refuses, so such an order must not be submitted at all.
+        """
         name_ocr = self.requirement_name_ocr
         counter_ocr = self.requirement_counter_ocr
         names = name_ocr.ocr(self.device.image)
         ids = [self.item_name_to_item_id(name) for name in names]
         counters = counter_ocr.ocr(self.device.image)
         requirements = {}
+        verified = True
         for id, counter in zip(ids, counters):
-            if id is not None and counter is not None:
-                requirements[id] = counter
-        return requirements
+            if id is None:
+                continue
+            if counter is None or counter[1] <= 0:
+                logger.warning(f'Requirement counter of item {id} is unreadable: {counter}')
+                verified = False
+                continue
+            requirements[id] = counter
+        return requirements, verified
 
     def get_order_remain_time(self, order_button: Button):
         time_button = order_button.crop((10, 119, 100, 145))
@@ -247,23 +263,34 @@ class IslandOrder(IslandUI):
         logger.warning(f'Failed to select order {order_button}')
         return False
 
+    # The game refuses a submission it cannot fulfil (insufficient stock, ...) and leaves the
+    # panel untouched, so submit clicks must be bounded or they end in GameTooManyClickError.
+    SUBMIT_ATTEMPTS = 3
+
     def submit_order(self, is_urgent=False):
         if is_urgent:
             submit_button = ISLAND_ORDER_ACCEPT_URGENT
         else:
             submit_button = ISLAND_ORDER_ACCEPT
         confirm_timer = Timer(3, count=6).start()
-        clicked = False
+        attempts = 0
         for _ in self.loop(timeout=20):
             if self.handle_island_additional():
-                clicked = True
                 confirm_timer.reset()
                 continue
             if self.handle_island_order_level_up():
                 confirm_timer.reset()
                 continue
-            if not clicked and self.match_template_color(submit_button, offset=(20, 20), interval=1):
+            # One click for the current panel: the game refuses submissions it cannot fulfil
+            # and leaves the panel untouched, so retries are spaced and bounded.
+            if (not attempts or confirm_timer.reached()) \
+                    and self.match_template_color(submit_button, offset=(20, 20), interval=1):
+                if attempts >= self.SUBMIT_ATTEMPTS:
+                    logger.warning(f'Submit button is still shown after {attempts} click(s), '
+                                   f'the game did not accept the order')
+                    return False
                 self.device.click(submit_button)
+                attempts += 1
                 confirm_timer.reset()
                 continue
             if not confirm_timer.reached():
@@ -278,9 +305,6 @@ class IslandOrder(IslandUI):
             if not is_urgent and self.match_template_color(ISLAND_ORDER_COOLDOWN_SPEED_UP, offset=(20, 20)):
                 logger.info('Previous order submitted, wait for next order to appear')
                 continue
-            if clicked and self.match_template_color(ISLAND_ORDER_ACCEPT, offset=(20, 20)):
-                logger.info('Confirm timer timeout, assuming submit success')
-                return True
         else:
             logger.warning('Submit order timeout, something may be wrong')
             return False
@@ -328,7 +352,10 @@ class IslandOrder(IslandUI):
             next_runtime = datetime.now() + remain_time
             self.next_runtime.append(next_runtime)
             return False
-        requirements = self.scan_current_order_requirements()
+        requirements, verified = self.scan_current_order_requirements()
+        if not verified:
+            logger.warning('Order requirements could not be read completely, do not submit this order')
+            return False
         force = not is_urgent and not is_season and (
             get_server_next_update(self.config.Scheduler_ServerUpdate) - datetime.now() <= ORDER_EXPIRE_FORCE_WINDOW
         )
